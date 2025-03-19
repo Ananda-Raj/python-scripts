@@ -3,7 +3,21 @@
 # Script to generate session token for AWS CLI
 # Author: Ananda Raj
 # Date: 2 Nov 2020
+# Description: 
 
+'''
+Generate an OTP from the OTP string.
+
+Create a file .otp-secret under current directory with OTP secret from the authenticator. If no file, it will be created when u execute the script and will be asked you to add the secret there.
+
+[user@server ~]$ cat .otp-secret 
+#OTP SECRET
+otp_secret='UTSDFHDS1234567SD67324G3HRBSDFSAPZMPK2QIOO5'
+
+Add execution permission to file. chmod +x gen-bast-otp
+
+Execute the OTP generation script from the command line to see the AWS MFA OTP. ./gen-bast-otp
+'''
 
 #!/usr/bin/env python3
 """
