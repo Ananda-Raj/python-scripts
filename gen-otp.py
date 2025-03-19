@@ -1,24 +1,18 @@
-#!/bin/bash
+#!/usr/bin/env python3
 
 # Script to generate session token for AWS CLI
 # Author: Ananda Raj
-# Date: 2 Nov 2020
-
-#!/usr/bin/env python3
-"""
-Shows your OTP challenge
-The first time the script will create a configuration file
-"""
+# Date: 1 Jan 2024
 
 import os
 from onetimepass import get_totp  # Ensure onetimepass is installed
 
-# Replace Username here (optional)
-print "OTP for user: abcde"
+# Replace Username, just for printing, can be commented out if not needed
+print "userabc"
 
 # OTP configuration file path
-#otpconfig = f"{os.environ['HOME']}/scripts/.otp-secret"
-otpconfig = f"./.otp-secret"
+# The first time the script will create a configuration file if not exist
+otpconfig = f"{os.environ['HOME']}/scripts/.otp-secret"
 
 # Ensure the configuration file exists
 if not os.path.isfile(otpconfig):
