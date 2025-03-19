@@ -60,3 +60,12 @@ ARN is arn:aws:iam::591940994135:mfa/aws-user
 Please input your 6 digit MFA token: 035240
 Generated new token for AWS CLI session
 Token generation completed, try executing CLI commands
+
+# sns_monitor.py
+
+How it works:
+	1.	Lists all SQS queues (even if more than 1000) using pagination.
+	2.	Filters queues that start with "PROD_".
+	3.	Fetches the number of messages waiting in each queue (from CloudWatch).
+	4.	If messages exceed 5000, it sends an SNS alert.
+	5.	Works dynamically with any number of queues.
