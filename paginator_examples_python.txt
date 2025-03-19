@@ -1,0 +1,129 @@
+1️⃣ List all objects in an S3 bucket
+
+```
+import boto3
+s3 = boto3.client('s3')
+paginator = s3.get_paginator('list_objects_v2')
+
+for page in paginator.paginate(Bucket="www.learnaws.org", PaginationConfig={"PageSize":10}):
+    print([c["Key"] for c in page["Contents"]])
+```
+
+How it works:
+	•	Creates an S3 client (s3 = boto3.client('s3')).
+	•	Gets a paginator for list_objects_v2 (used to list objects in a bucket).
+	•	Loops through pages, specifying PaginationConfig={"PageSize":10}, meaning each page will contain at most 10 objects.
+	•	Extracts object keys (c["Key"] refers to object names).
+	•	Prints the list of object names.
+
+    
+2️⃣ List all IAM roles
+
+```
+import boto3
+
+iam = boto3.client('iam')
+paginator = iam.get_paginator('list_roles')
+
+for page in paginator.paginate():
+    print([c["RoleName"] for c in page["Roles"]])
+```
+
+How it works:
+	•	Creates an IAM client.
+	•	Gets a paginator for list_roles (lists all IAM roles).
+	•	Loops through pages, extracting RoleName for each role and printing them.
+
+
+3️⃣ List all EC2 instances
+
+```
+import boto3
+
+ec2 = boto3.client('ec2')
+paginator = ec2.get_paginator('describe_instances')
+
+for page in paginator.paginate():
+    print([c["InstanceId"] for c in page["Reservations"][0]["Instances"]])
+```
+
+How it works:
+	•	Creates an EC2 client.
+	•	Gets a paginator for describe_instances (retrieves instance details).
+	•	Loops through pages, extracting InstanceId from the response.
+	•	Note: Reservations[0] assumes at least one reservation exists, which can cause errors if no instances are found.
+
+
+4️⃣ List all EC2 instances
+
+```
+import boto3
+import datetime
+
+# AWS Clients
+sqs = boto3.client('sqs')
+sns = boto3.client('sns')
+cloudwatch = boto3.client('cloudwatch')
+
+# Your SNS topic for alerts
+SNS_TOPIC_ARN = "arn:aws:sns:eu-central-1:948110728344:test-redux"
+
+# Create a reusable Paginator
+paginator = sqs.get_paginator('list_queues')
+
+# Collect all queue URLs
+all_queues = []
+for page in paginator.paginate(PaginationConfig={"PageSize": 100}):  # Fetch in batches of 100
+    all_queues.extend(page.get('QueueUrls', []))  # Append queues from each page
+
+# Filter only those that start with 'PROD_'
+prod_queues = [q for q in all_queues if q.split('/')[-1].startswith("PROD_")]
+
+# Print total PROD_ queues retrieved
+print(f"✅ Total PROD_ Queues Retrieved: {len(prod_queues)}")
+
+# Time range for last 5 minutes
+end_time = datetime.datetime.now(datetime.UTC)
+start_time = end_time - datetime.timedelta(minutes=5)
+
+# Check all PROD_ queue URLs
+for queue_url in prod_queues:
+
+    # Extract queue name
+    queue_name = queue_url.split('/')[-1]
+
+    # Get CloudWatch metric statistics
+    response = cloudwatch.get_metric_statistics(
+        Namespace="AWS/SQS",
+        MetricName="ApproximateNumberOfMessagesVisible",
+        Dimensions=[{"Name": "QueueName", "Value": queue_name}],
+        Statistics=["Maximum"],
+        Period=3000,  # 5-minute period
+        StartTime=start_time,
+        EndTime=end_time
+    )
+
+    # Extract the max number of messages seen in the last 5 minutes
+    data_points = response.get("Datapoints", [])
+    if data_points:
+        max_messages = max(dp["Maximum"] for dp in data_points)
+    else:
+        max_messages = 0  # No data points = no messages in the last 5 minutes
+
+    # If the queue exceeded 2 messages in the last 5 minutes, send an alert
+    if max_messages > 5000:
+        print(f"🚨 TEST ALERT! {queue_name} had {max_messages} messages in the last 5 minutes.")
+        sns.publish(
+            TopicArn=SNS_TOPIC_ARN,
+            Message=f"Queue {queue_name} had {max_messages} messages in the last 5 minutes!",
+            Subject="Phobs SQS Queue Overload Alert"
+        )
+```
+
+How it works:
+	1.	Lists all SQS queues (even if more than 1000) using pagination.
+	2.	Filters queues that start with "PROD_".
+	3.	Fetches the number of messages waiting in each queue (from CloudWatch).
+	4.	If messages exceed 5000, it sends an SNS alert.
+	5.	Works dynamically with any number of queues.
+
